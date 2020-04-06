@@ -44,13 +44,13 @@ func (r *Resource) performBackup(ctx context.Context, backupper etcd.Backupper, 
 
 func (r *Resource) backupAttempt(ctx context.Context, b etcd.Backupper) (*metrics.BackupAttemptResult, error) {
 	var err error
-	version := b.Version()
+	//version := b.Version()
 
 	r.logger.LogCtx(ctx, "level", "debug", "message", "Creating backup file")
 	start := time.Now()
 	_, err = b.Create()
 	if err != nil {
-		return metrics.NewFailedBackupAttemptResult(), microerror.Maskf(err, "Etcd %s creation failed: %s", version, err)
+		return metrics.NewFailedBackupAttemptResult(), microerror.Mask(err)
 	}
 	creationTime := time.Since(start).Milliseconds()
 
@@ -58,7 +58,7 @@ func (r *Resource) backupAttempt(ctx context.Context, b etcd.Backupper) (*metric
 	start = time.Now()
 	filepath, err := b.Encrypt()
 	if err != nil {
-		return metrics.NewFailedBackupAttemptResult(), microerror.Maskf(err, "Etcd %s encryption failed: %s", version, err)
+		return metrics.NewFailedBackupAttemptResult(), microerror.Mask(err)
 	}
 	encryptionTime := time.Since(start).Milliseconds()
 
@@ -66,7 +66,7 @@ func (r *Resource) backupAttempt(ctx context.Context, b etcd.Backupper) (*metric
 	start = time.Now()
 	backupSize, err := r.uploader.Upload(filepath)
 	if err != nil {
-		return metrics.NewFailedBackupAttemptResult(), microerror.Maskf(err, "Etcd %s upload failed: %s", version, err)
+		return metrics.NewFailedBackupAttemptResult(), microerror.Mask(err)
 	}
 	uploadTime := time.Since(start).Milliseconds()
 

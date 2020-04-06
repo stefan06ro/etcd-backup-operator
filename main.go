@@ -23,7 +23,7 @@ var (
 func main() {
 	err := mainE(context.Background())
 	if err != nil {
-		panic(microerror.Stack(err))
+		panic(microerror.JSON(err))
 	}
 }
 
@@ -55,7 +55,7 @@ func mainE(ctx context.Context) error {
 
 			newService, err = service.New(c)
 			if err != nil {
-				panic(microerror.Stack(err))
+				panic(microerror.JSON(err))
 			}
 
 			go newService.Boot(ctx)
@@ -73,7 +73,7 @@ func mainE(ctx context.Context) error {
 
 			newServer, err = server.New(c)
 			if err != nil {
-				panic(microerror.Stack(err))
+				panic(microerror.JSON(err))
 			}
 		}
 
@@ -116,6 +116,7 @@ func mainE(ctx context.Context) error {
 	daemonCommand.PersistentFlags().String(f.Service.ETCDv3.CaCert, "", "Client CA certificate for ETCD v3 connection")
 	daemonCommand.PersistentFlags().String(f.Service.ETCDv3.Key, "", "Client private key for ETCD v3 connection")
 	daemonCommand.PersistentFlags().String(f.Service.ETCDv3.Endpoints, "", "Endpoints for ETCD v3 connection")
+	daemonCommand.PersistentFlags().String(f.Service.Sentry.Dsn, "", "sentry.io DSN for error forwarding.")
 
 	err = newCommand.CobraCommand().Execute()
 	if err != nil {

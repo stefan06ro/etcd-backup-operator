@@ -2,14 +2,14 @@ package giantnetes
 
 import "github.com/giantswarm/microerror"
 
-var failedBackupError = microerror.New("backup failed")
-
-func IsFailedBackupError(err error) bool {
-	return microerror.Cause(err) == failedBackupError
+var invalidConfigError = microerror.Error{
+	Kind: "invalid config",
 }
 
-var unableToGetTenantClustersError = microerror.New("unable to get any tenant cluster")
+var failedBackupError = microerror.Error{
+	Kind: "backup failed",
+}
 
-func IsUnableToGetTenantClustersError(err error) bool {
-	return microerror.Cause(err) == unableToGetTenantClustersError
+var unableToGetTenantClustersError = microerror.Error{
+	Kind: "unable to get any tenant cluster",
 }

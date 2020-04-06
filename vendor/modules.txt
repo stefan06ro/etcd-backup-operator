@@ -1,5 +1,6 @@
-# github.com/aws/aws-sdk-go v1.16.26
+# github.com/aws/aws-sdk-go v1.27.0
 github.com/aws/aws-sdk-go/aws
+github.com/aws/aws-sdk-go/aws/arn
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/awsutil
 github.com/aws/aws-sdk-go/aws/client
@@ -20,19 +21,23 @@ github.com/aws/aws-sdk-go/aws/signer/v4
 github.com/aws/aws-sdk-go/internal/ini
 github.com/aws/aws-sdk-go/internal/s3err
 github.com/aws/aws-sdk-go/internal/sdkio
+github.com/aws/aws-sdk-go/internal/sdkmath
 github.com/aws/aws-sdk-go/internal/sdkrand
 github.com/aws/aws-sdk-go/internal/sdkuri
 github.com/aws/aws-sdk-go/internal/shareddefaults
 github.com/aws/aws-sdk-go/private/protocol
 github.com/aws/aws-sdk-go/private/protocol/eventstream
 github.com/aws/aws-sdk-go/private/protocol/eventstream/eventstreamapi
+github.com/aws/aws-sdk-go/private/protocol/json/jsonutil
 github.com/aws/aws-sdk-go/private/protocol/query
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
 github.com/aws/aws-sdk-go/private/protocol/rest
 github.com/aws/aws-sdk-go/private/protocol/restxml
 github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/service/s3
+github.com/aws/aws-sdk-go/service/s3/internal/arn
 github.com/aws/aws-sdk-go/service/sts
+github.com/aws/aws-sdk-go/service/sts/stsiface
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/cenkalti/backoff v2.2.1+incompatible
@@ -54,6 +59,8 @@ github.com/dsnet/compress/internal/prefix
 github.com/evanphx/json-patch
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
+# github.com/getsentry/sentry-go v0.5.1
+github.com/getsentry/sentry-go
 # github.com/giantswarm/apiextensions v0.2.1-0.20200323170141-e2b7c1c359a2
 github.com/giantswarm/apiextensions/pkg/apis/application/v1alpha1
 github.com/giantswarm/apiextensions/pkg/apis/backup/v1alpha1
@@ -71,22 +78,23 @@ github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/example/v1alph
 github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/infrastructure/v1alpha2
 github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/provider/v1alpha1
 github.com/giantswarm/apiextensions/pkg/clientset/versioned/typed/release/v1alpha1
-# github.com/giantswarm/backoff v0.0.0-20190913091243-4dd491125192
+# github.com/giantswarm/backoff v0.2.0
 github.com/giantswarm/backoff
-# github.com/giantswarm/exporterkit v0.0.0-20190619131829-9749deade60f
+# github.com/giantswarm/exporterkit v0.2.0
 github.com/giantswarm/exporterkit/collector
-# github.com/giantswarm/k8sclient v0.0.0-20191213144452-f75fead2ae06
+# github.com/giantswarm/k8sclient v0.2.0
 github.com/giantswarm/k8sclient
 github.com/giantswarm/k8sclient/k8scrdclient
 github.com/giantswarm/k8sclient/k8srestconfig
-# github.com/giantswarm/microendpoint v0.0.0-20191121160659-e991deac2653
+github.com/giantswarm/k8sclient/k8sversion
+# github.com/giantswarm/microendpoint v0.2.0
 github.com/giantswarm/microendpoint/endpoint/healthz
 github.com/giantswarm/microendpoint/endpoint/version
 github.com/giantswarm/microendpoint/service/healthz
 github.com/giantswarm/microendpoint/service/version
-# github.com/giantswarm/microerror v0.0.0-20191011121515-e0ebc4ecf5a5
+# github.com/giantswarm/microerror v0.2.0
 github.com/giantswarm/microerror
-# github.com/giantswarm/microkit v0.0.0-20191023091504-429e22e73d3e
+# github.com/giantswarm/microkit v0.2.0
 github.com/giantswarm/microkit/command
 github.com/giantswarm/microkit/command/daemon
 github.com/giantswarm/microkit/command/daemon/flag
@@ -101,17 +109,18 @@ github.com/giantswarm/microkit/command/version
 github.com/giantswarm/microkit/flag
 github.com/giantswarm/microkit/server
 github.com/giantswarm/microkit/tls
-# github.com/giantswarm/micrologger v0.0.0-20191014091141-d866337f7393
+# github.com/giantswarm/micrologger v0.3.1
 github.com/giantswarm/micrologger
 github.com/giantswarm/micrologger/loggermeta
 github.com/giantswarm/micrologger/microloggertest
-# github.com/giantswarm/operatorkit v0.0.0-20200116124438-aa7ed9599161
+# github.com/giantswarm/operatorkit v0.2.1-0.20200406135908-dc16da057566
 github.com/giantswarm/operatorkit/controller
 github.com/giantswarm/operatorkit/controller/collector
 github.com/giantswarm/operatorkit/controller/context/finalizerskeptcontext
 github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext
 github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext
 github.com/giantswarm/operatorkit/controller/context/updateallowedcontext
+github.com/giantswarm/operatorkit/controller/sentry
 github.com/giantswarm/operatorkit/flag/service/kubernetes
 github.com/giantswarm/operatorkit/flag/service/kubernetes/tls
 github.com/giantswarm/operatorkit/flag/service/kubernetes/watch
@@ -120,16 +129,16 @@ github.com/giantswarm/operatorkit/resource/crud
 github.com/giantswarm/operatorkit/resource/wrapper/internal
 github.com/giantswarm/operatorkit/resource/wrapper/metricsresource
 github.com/giantswarm/operatorkit/resource/wrapper/retryresource
-# github.com/giantswarm/to v0.0.0-20191022113953-f2078541ec95
+# github.com/giantswarm/to v0.2.0
 github.com/giantswarm/to
-# github.com/giantswarm/versionbundle v0.0.0-20191206123034-be95231628ae
+# github.com/giantswarm/versionbundle v0.2.0
 github.com/giantswarm/versionbundle
-# github.com/go-kit/kit v0.9.0
+# github.com/go-kit/kit v0.10.0
 github.com/go-kit/kit/endpoint
 github.com/go-kit/kit/log
 github.com/go-kit/kit/transport
 github.com/go-kit/kit/transport/http
-# github.com/go-logfmt/logfmt v0.4.0
+# github.com/go-logfmt/logfmt v0.5.0
 github.com/go-logfmt/logfmt
 # github.com/go-logr/logr v0.1.0
 github.com/go-logr/logr
@@ -186,10 +195,6 @@ github.com/inconshreveable/mousetrap
 github.com/jmespath/go-jmespath
 # github.com/json-iterator/go v1.1.9
 github.com/json-iterator/go
-# github.com/juju/errgo v0.0.0-20140925100237-08cceb5d0b53
-github.com/juju/errgo
-# github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515
-github.com/kr/logfmt
 # github.com/magiconair/properties v1.8.1
 github.com/magiconair/properties
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
@@ -216,7 +221,6 @@ github.com/pkg/errors
 # github.com/prometheus/client_golang v1.5.0
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
-github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
 # github.com/prometheus/client_model v0.2.0
 github.com/prometheus/client_model/go
@@ -239,7 +243,7 @@ github.com/spf13/cobra
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.6.1
+# github.com/spf13/viper v1.6.2
 github.com/spf13/viper
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv

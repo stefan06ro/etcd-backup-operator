@@ -26,10 +26,10 @@ type clusterWithProvider struct {
 
 func NewUtils(logger micrologger.Logger, client k8sclient.Interface) (*Utils, error) {
 	if logger == nil {
-		return nil, microerror.Mask(microerror.New("logger can't be nil"))
+		return nil, microerror.Maskf(&invalidConfigError, "logger can't be nil")
 	}
 	if client == nil {
-		return nil, microerror.Mask(microerror.New("client can't be nil"))
+		return nil, microerror.Maskf(&invalidConfigError, "client can't be nil")
 	}
 
 	return &Utils{
@@ -106,7 +106,7 @@ func (u *Utils) checkClusterVersionSupport(cluster clusterWithProvider) (bool, e
 		{
 			crd, err := crdClient.ProviderV1alpha1().AWSConfigs(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return false, microerror.Maskf(err, fmt.Sprintf("failed to get aws config crd %s", cluster.clusterID))
+				return false, microerror.Mask(err)
 			}
 			return stringVersionCmp(crd.Spec.VersionBundle.Version, semver.New("0.0.0"), awsSupportFrom)
 		}
@@ -119,7 +119,7 @@ func (u *Utils) checkClusterVersionSupport(cluster clusterWithProvider) (bool, e
 		{
 			crd, err := crdClient.ProviderV1alpha1().AzureConfigs(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return false, microerror.Maskf(err, fmt.Sprintf("failed to get azure crd %s", cluster.clusterID))
+				return false, microerror.Mask(err)
 			}
 			return stringVersionCmp(crd.Spec.VersionBundle.Version, semver.New("0.0.0"), azureSupportFrom)
 		}
@@ -138,7 +138,7 @@ func (u *Utils) getEtcdTLSCfg(clusterID string) (*TLSClientConfig, error) {
 	getOpts := metav1.GetOptions{}
 	secret, err := k8sClient.CoreV1().Secrets(secretNamespace).Get(fmt.Sprintf("%s-etcd", clusterID), getOpts)
 	if err != nil {
-		return nil, microerror.Maskf(err, "error getting etcd client certificates for guest cluster %s", clusterID)
+		return nil, microerror.Mask(err)
 	}
 
 	certs := &TLSClientConfig{
@@ -161,7 +161,7 @@ func (u *Utils) getEtcdEndpoint(cluster clusterWithProvider) (string, error) {
 		{
 			crd, err := crdClient.ProviderV1alpha1().AWSConfigs(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return "", microerror.Maskf(err, "error getting aws crd for guest cluster %s", cluster.clusterID)
+				return "", microerror.Mask(err)
 			}
 			etcdEndpoint = AwsEtcdEndpoint(crd.Spec.Cluster.Etcd.Domain)
 			break
@@ -170,7 +170,7 @@ func (u *Utils) getEtcdEndpoint(cluster clusterWithProvider) (string, error) {
 		{
 			crd, err := crdClient.InfrastructureV1alpha2().AWSClusters(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return "", microerror.Maskf(err, "error getting aws crd for guest cluster %s", cluster.clusterID)
+				return "", microerror.Mask(err)
 			}
 			etcdEndpoint = AwsCAPIEtcdEndpoint(cluster.clusterID, crd.Spec.Cluster.DNS.Domain)
 			break
@@ -179,7 +179,7 @@ func (u *Utils) getEtcdEndpoint(cluster clusterWithProvider) (string, error) {
 		{
 			crd, err := crdClient.ProviderV1alpha1().AzureConfigs(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return "", microerror.Maskf(err, "error getting azure crd for guest cluster %s", cluster.clusterID)
+				return "", microerror.Mask(err)
 			}
 			etcdEndpoint = AzureEtcdEndpoint(crd.Spec.Cluster.Etcd.Domain)
 			break
@@ -188,7 +188,7 @@ func (u *Utils) getEtcdEndpoint(cluster clusterWithProvider) (string, error) {
 		{
 			crd, err := crdClient.ProviderV1alpha1().KVMConfigs(crdNamespace).Get(cluster.clusterID, getOpts)
 			if err != nil {
-				return "", microerror.Maskf(err, "error getting kvm crd for guest cluster %s", cluster.clusterID)
+				return "", microerror.Mask(err)
 			}
 			etcdEndpoint = KVMEtcdEndpoint(crd.Spec.Cluster.Etcd.Domain)
 			break
@@ -209,21 +209,21 @@ func (u *Utils) createCertFiles(clusterID string, certConfig *TLSClientConfig) e
 	// cert
 	err = ioutil.WriteFile(CertFile(clusterID, tmpDir), certConfig.CrtData, fileMode)
 	if err != nil {
-		return microerror.Maskf(err, fmt.Sprintf("Failed to write crt file %s", CertFile(clusterID, tmpDir)))
+		return microerror.Mask(err)
 	}
 	certConfig.CrtFile = CertFile(clusterID, tmpDir)
 
 	// key
 	err = ioutil.WriteFile(KeyFile(clusterID, tmpDir), certConfig.KeyData, fileMode)
 	if err != nil {
-		return microerror.Maskf(err, fmt.Sprintf("Failed to write key file %s", KeyFile(clusterID, tmpDir)))
+		return microerror.Mask(err)
 	}
 	certConfig.KeyFile = KeyFile(clusterID, tmpDir)
 
 	// ca
 	err = ioutil.WriteFile(CAFile(clusterID, tmpDir), certConfig.CAData, fileMode)
 	if err != nil {
-		return microerror.Maskf(err, fmt.Sprintf("Failed to write ca file %s", CAFile(clusterID, tmpDir)))
+		return microerror.Mask(err)
 	}
 	certConfig.CAFile = CAFile(clusterID, tmpDir)
 
@@ -303,7 +303,7 @@ func (u *Utils) getAllGuestClusters(ctx context.Context, crdCLient versioned.Int
 
 	if !anySuccess {
 		// No provider check was successful, raise an error.
-		return clusterList, unableToGetTenantClustersError
+		return clusterList, &unableToGetTenantClustersError
 	}
 
 	// At least one provider check was successful (but possibly no tenant clusters were found).

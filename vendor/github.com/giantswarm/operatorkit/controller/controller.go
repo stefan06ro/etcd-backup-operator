@@ -35,6 +35,7 @@ import (
 	"github.com/giantswarm/operatorkit/controller/collector"
 	"github.com/giantswarm/operatorkit/controller/context/reconciliationcanceledcontext"
 	"github.com/giantswarm/operatorkit/controller/context/resourcecanceledcontext"
+	"github.com/giantswarm/operatorkit/controller/sentry"
 	"github.com/giantswarm/operatorkit/resource"
 )
 
@@ -92,6 +93,9 @@ type Config struct {
 	// runtime objects the controller watches is performed. Defaults to
 	// DefaultResyncPeriod.
 	ResyncPeriod time.Duration
+	// (Optional) SentryDSN is the URL used to forward runtime errors to the sentry.io service.
+	// If this field is empty, logs will not be forwarded.
+	SentryDSN string
 }
 
 type Controller struct {
@@ -108,8 +112,8 @@ type Controller struct {
 	collector              *collector.Set
 	errorCollector         chan error
 	loop                   int64
-	mutex                  sync.Mutex
 	removedFinalizersCache *stringCache
+	sentry                 *sentry.Service
 
 	name         string
 	resyncPeriod time.Duration
@@ -151,6 +155,12 @@ func New(config Config) (*Controller, error) {
 		return nil, microerror.Mask(err)
 	}
 
+	sentryService, err := sentry.New(sentry.Config{Dsn: config.SentryDSN})
+	if err != nil {
+		// This is not a blocking error, we just want to log it.
+		config.Logger.LogCtx(context.Background(), "level", "error", "message", "Error initializing Sentry client", "stack", microerror.JSON(err))
+	}
+
 	c := &Controller{
 		crd:                  config.CRD,
 		backOffFactory:       func() backoff.Interface { return backoff.NewMaxRetries(7, 1*time.Second) },
@@ -165,8 +175,8 @@ func New(config Config) (*Controller, error) {
 		collector:              timestampCollector,
 		errorCollector:         make(chan error, 1),
 		loop:                   -1,
-		mutex:                  sync.Mutex{},
 		removedFinalizersCache: newStringCache(config.ResyncPeriod * 3),
+		sentry:                 sentryService,
 
 		name:         config.Name,
 		resyncPeriod: config.ResyncPeriod,
@@ -192,7 +202,7 @@ func (c *Controller) Boot(ctx context.Context) {
 
 		err := backoff.RetryNotify(operation, c.backOffFactory(), notifier)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "stop controller boot retries due to too many errors", "stack", microerror.JSON(err))
 			os.Exit(1)
 		}
 	})
@@ -218,7 +228,7 @@ func (c *Controller) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 	res, err := c.reconcile(ctx, req)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed to reconcile", "stack", microerror.JSON(err))
 		return reconcile.Result{}, nil
 	}
 
@@ -250,8 +260,11 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 
 		for {
 			select {
-			case <-c.errorCollector:
+			case err := <-c.errorCollector:
 				errorGauge.Inc()
+
+				c.sentry.Capture(ctx, err)
+
 			case <-time.After(resetWait):
 				errorGauge.Set(0)
 			}
@@ -274,7 +287,7 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 				}
 
 				c.errorCollector <- err
-				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.Stack(err))
+				c.logger.LogCtx(ctx, "level", "error", "message", "caught third party runtime error", "stack", microerror.JSON(err))
 			},
 		}
 	}
@@ -335,14 +348,6 @@ func (c *Controller) bootWithError(ctx context.Context) error {
 }
 
 func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
-	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
-	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
 	var err error
 
 	var rs *ResourceSet
@@ -356,7 +361,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -371,7 +376,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -379,7 +384,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	hasFinalizer, err := c.hasFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed checking finalizer", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
@@ -387,7 +392,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 		err = ProcessDelete(ctx, obj, rs.Resources())
 		if err != nil {
 			c.errorCollector <- err
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -399,7 +404,7 @@ func (c *Controller) deleteFunc(ctx context.Context, obj interface{}) {
 
 	err = c.removeFinalizer(ctx, obj)
 	if err != nil {
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed removing finalizer", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}
@@ -460,14 +465,6 @@ func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
-	// DeleteFunc/UpdateFunc is synchronized to make sure only one of them is
-	// executed at a time. DeleteFunc/UpdateFunc is not thread safe. This is
-	// important because the source of truth for an operator are the reconciled
-	// resources. In case we would run the operator logic in parallel, we would
-	// run into race conditions.
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
 	var err error
 
 	var rs *ResourceSet
@@ -481,7 +478,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 			return
 
 		} else if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed finding resource set", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -496,7 +493,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 		oldCtx := ctx
 		ctx, err = rs.InitCtx(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.Stack(err))
+			c.logger.LogCtx(oldCtx, "level", "error", "message", "failed initializing context", "stack", microerror.JSON(err))
 			c.logger.LogCtx(oldCtx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -507,7 +504,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 
 		ok, err := c.addFinalizer(ctx, obj)
 		if err != nil {
-			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.Stack(err))
+			c.logger.LogCtx(ctx, "level", "error", "message", "failed adding finalizer", "stack", microerror.JSON(err))
 			c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 			return
 		}
@@ -526,7 +523,7 @@ func (c *Controller) updateFunc(ctx context.Context, obj interface{}) {
 	err = ProcessUpdate(ctx, obj, rs.Resources())
 	if err != nil {
 		c.errorCollector <- err
-		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.Stack(err))
+		c.logger.LogCtx(ctx, "level", "error", "message", "failed processing event", "stack", microerror.JSON(err))
 		c.logger.LogCtx(ctx, "level", "debug", "message", "canceling reconciliation")
 		return
 	}

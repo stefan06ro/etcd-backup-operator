@@ -59,6 +59,7 @@ spec:
         - daemon
         - --config.dirs=/var/run/{{ .Values.project.name }}/configmap/
         - --config.files=config
+        - --service.sentry.dsn={{ .Values.sentry.dsn }}
         volumeMounts:
         - mountPath: /var/lib/etcd
           name: etcd-datadir
