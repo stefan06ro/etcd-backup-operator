@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/aws/aws-sdk-go v1.40.27
 	github.com/coreos/go-semver v0.3.0
-	github.com/giantswarm/apiextensions/v3 v3.32.0
+	github.com/giantswarm/apiextensions/v3 v3.35.0
 	github.com/giantswarm/backoff v0.2.0
 	github.com/giantswarm/exporterkit v0.2.1
 	github.com/giantswarm/k8sclient/v5 v5.12.0
@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/viper v1.8.1
 	github.com/ulikunitz/xz v0.5.8 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	k8s.io/apimachinery v0.18.19
 	k8s.io/client-go v0.18.19
 )
