@@ -6,7 +6,7 @@ import (
 
 	"github.com/giantswarm/apiextensions/v3/pkg/apis/backup/v1alpha1"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/operatorkit/v4/pkg/controller/context/reconciliationcanceledcontext"
+	"github.com/giantswarm/operatorkit/v5/pkg/controller/context/reconciliationcanceledcontext"
 
 	"github.com/giantswarm/etcd-backup-operator/v2/pkg/giantnetes"
 	"github.com/giantswarm/etcd-backup-operator/v2/service/controller/key"
