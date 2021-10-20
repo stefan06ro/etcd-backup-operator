@@ -15,14 +15,13 @@ require (
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/giantswarm/operatorkit/v4 v4.3.1
 	github.com/google/go-cmp v0.5.6
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/viper v1.8.1
 	github.com/ulikunitz/xz v0.5.8 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	k8s.io/apimachinery v0.18.19
-	k8s.io/client-go v0.18.19
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	k8s.io/apimachinery v0.20.11
+	k8s.io/client-go v0.20.11
 )
 
 replace (
